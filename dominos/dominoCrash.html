@@ -1,312 +1,312 @@
 <!doctype html>
 <html lang="en">
-<head>
-	<title>Domino Crash v1.0</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<link rel=stylesheet href="../libs/base.css"/>
-</head>
-<body>
+	<head>
+		<title>Domino Crash v1.0</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel=stylesheet href="../libs/base.css"/>
+	</head>
+	<body>
+		<div id="infoButton"></div>
+		<div id="infoBox" title="Demo Information" style="text-align: center; margin-bottom: 10px">
+			<ul>
+				<li>A - add domino</li>
+				<li>D - remove domino</li>
+				<li>X - delete selected domino</li>
+				<li>left arrow - crash left</li>
+				<li>right arrow- crash right</li>
+				<li>R - rotate domino</li>
+				<li>M - full screen</li>
+				<li>escape - exit full screen</li>
+				<li>0 - restart</li>
+				<li>mouse left - set domino</li>
+				<li>mouse right - select domino</li>
+				<p style="font-weight: 10000 ">In order to select domino and do anything with selected domino - you must first exit seeding mode by pressing letter 'D'</p>
+			</ul>
+		</div>
+		<div id="color" style=""></div>
+		<div id="dominoSite" style="position: absolute; left:0px; top:0px"></div>
 
-<script src="../libs/three.js"></script>
-<script src="../libs/Detector.js"></script>
-<script src="../libs/OrbitControls.js"></script>
-<script src="../libs/FirstPersonControls.js"></script>
-<script type="text/javascript" src="../libs/dat.gui.js"></script>
-<script type="text/javascript" src="../libs/physi.js"></script>
-<script type="text/javascript" src="../libs/stats.js"></script>
-<script src="../libs/THREEx.KeyboardState.js"></script>
-<script src="../libs/THREEx.FullScreen.js"></script>
-<script src="../libs/THREEx.WindowResize.js"></script>
-<script type="text/javascript" src="../libs/Projector.js"></script>
-<!-- ------------------------------------------------------------ -->
+		<link rel=stylesheet href="../libs/jquery-ui.css"/>		
+		<link rel=stylesheet href="../libs/info.css"/>		
 
-<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
-<script>
+		<script src="../libs/three.js"></script>
+		<script src="../libs/Detector.js"></script>
+		<script src="../libs/OrbitControls.js"></script>
+		<script src="../libs/FirstPersonControls.js"></script>
+		<script type="text/javascript" src="../libs/dat.gui.js"></script>
+		<script type="text/javascript" src="../libs/physi.js"></script>
+		<script type="text/javascript" src="../libs/stats.js"></script>
+		<script src="../libs/THREEx.KeyboardState.js"></script>
+		<script src="../libs/THREEx.FullScreen.js"></script>
+		<script src="../libs/THREEx.WindowResize.js"></script>
+		<script src="../libs/jquery-1.9.1.js"></script>
+		<script src="../libs/jquery-ui.js"></script>
+		<script type="text/javascript" src="../libs/Projector.js"></script>
+		<script src="../libs/info.js"></script>
+		<script>
 
-	'use strict';
+			'use strict';
 
-	Physijs.scripts.worker = '../libs/physijs_worker.js';
-	Physijs.scripts.ammo = '../libs/ammo.js';
-	var collidableMeshList = [];
-	var initScene, render, applyForce, setMousePosition, mouse_position,
-	        ground_material, box_material,
-	        renderer, render_stats, scene, ground, container, controls, controlsR, light, camera, box, boxes = [];
-   var keyboard = new THREEx.KeyboardState();
-   var clock = new THREE.Clock();
-// custom global variables
-   var cube;
-   var dominos = [];
-   //var projector, mouse = { x: 0, y: 0 }, INTERSECTED;
-   var dominoSprite;
-   var colorD;
-   var addDom = false;
-   var soundSample = false;
+			Physijs.scripts.worker = '../libs/physijs_worker.js';
+			Physijs.scripts.ammo = '../libs/ammo.js';
 
-init();
-animate();
+			var renderer, scene, container, controls, light, camera;
+			var keyboard = new THREEx.KeyboardState();
+			var dominos = [];
+			var touched = false;
+			var addDom = false;
+			var crash = 0;
+			var selColor = 0x00ff00;
 
-// FUNCTIONS 		
-function init() 
-{
-	// SCENE
-	scene = new Physijs.Scene;
-	scene.setGravity(new THREE.Vector3(0, -100, 0));
-	// CAMERA
-	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
-	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
-	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
-	scene.add(camera);
-	camera.position.set(0,150,400);
-	camera.lookAt(scene.position);	
-	// RENDERER
-	if ( Detector.webgl )
-		renderer = new THREE.WebGLRenderer( {antialias:true} );
-	else
-		renderer = new THREE.CanvasRenderer(); 
-	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-	container = document.getElementById( 'ThreeJS' );
-	container.appendChild( renderer.domElement );
-	// EVENTS
-	THREEx.WindowResize(renderer, camera);
-	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
-	// CONTROLS
-	controls = new THREE.OrbitControls( camera, renderer.domElement );
-	controlsR = new THREE.OrbitControls( camera, renderer.domElement );
-	
-	var cubeMaterial = new THREE.MeshLambertMaterial({color: 0xcd0000});
-	var cubeMaterial2 = new THREE.MeshLambertMaterial({color: 0xcd0000, wireframe: true});
-	var cubeGeometry = new THREE.BoxGeometry(5, 60, 25, 8, 8, 8, cubeMaterial);
+			init();
+			animate();
 
-	
+			function init() {
 
-	var projector = new THREE.Projector();
-	document.addEventListener('mousedown', onDocumentMouseDown, false);
-	document.addEventListener('mousemove', onDocumentMouseMove, false);
-	document.addEventListener("keydown", onDocumentKeyDown, false);
-	/*document.addEventListener('collision', function(object) {
-	    sound1.play();
-	  });*/
+				document.addEventListener('mousedown', onDocumentMouseDown, false);
+				document.addEventListener('mousemove', onDocumentMouseMove, false);
+				document.addEventListener("keydown", onDocumentKeyDown, false);
 
-	controlsR = new function () {
-	    this.showRay = true;
-	};
+				scene = new Physijs.Scene;
+				scene.setGravity(new THREE.Vector3(0, -2000, 0));
 
+				var screen_w = window.innerWidth;
+				var screen_h = window.innerHeight;
+				var view_angle = 45;
+				var aspect = screen_w / screen_h;
+				var near = 0.1;
+				var far = 20000;
+				camera = new THREE.PerspectiveCamera( view_angle, aspect, near, far);
+				scene.add(camera);
+				camera.position.set(0,150,400);
+				camera.lookAt(scene.position);	
 
-	
+					if ( Detector.webgl )
+						renderer = new THREE.WebGLRenderer( {antialias:true} );
+					else
+						renderer = new THREE.CanvasRenderer(); 
 
-	// LIGHT
-	var light = new THREE.PointLight(0xffffff);
-	light.position.set(0,250,0);
-	scene.add(light);
-	// FLOOR
-	var floorTexture = new THREE.ImageUtils.loadTexture( '../assets/textures/annie-spratt-osuiatBDTww-unsplash.jpg' );
-	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
-	floorTexture.repeat.set( 1, 1 );
-	var floorMaterial = Physijs.createMaterial(
-                    new THREE.MeshPhongMaterial({map: floorTexture, side: THREE.DoubleSide}),
-                    .9, .3);
+				renderer.setSize(screen_w, screen_h);
+				container = document.getElementById( 'dominoSite' );
+				container.appendChild( renderer.domElement );
 
+				THREEx.WindowResize(renderer, camera);
+				THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
 
-	var floorGeometry = new Physijs.BoxMesh(new THREE.BoxGeometry(500, 3, 500), floorMaterial, 0);
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-	
-	var floor = new Physijs.BoxMesh(new THREE.BoxGeometry(500, 500, 3), floorMaterial, 0);
+				var dominoMaterial = new THREE.MeshLambertMaterial({color: selColor});
+				var dominoMaterialTouch = new THREE.MeshLambertMaterial({color: selColor, wireframe: true});
+				var dominoGeometry = new THREE.BoxGeometry(5, 60, 25, 8, 8, 8, dominoMaterial);
+				var projector = new THREE.Projector();
 
+				var light = new THREE.PointLight(0xffffff);
+				light.position.set(0,250,0);
+				scene.add(light);
 
+				var floorTexture = new THREE.ImageUtils.loadTexture( '../assets/textures/annie-spratt-osuiatBDTww-unsplash.jpg' );
+				floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+				floorTexture.repeat.set( 1, 1 );
+				var floorMaterial = Physijs.createMaterial(new THREE.MeshPhongMaterial({map: floorTexture, side: THREE.DoubleSide}), .9, .3);
+				var floorGeometry = new Physijs.BoxMesh(new THREE.BoxGeometry(500, 3, 500), floorMaterial, 0);
+				var floor = new Physijs.BoxMesh(new THREE.BoxGeometry(500, 500, 3), floorMaterial, 0);
+				floor.position.y = -0.5;
+				floor.rotation.x = Math.PI / 2;
+				scene.add(floor);
 
-	floor.position.y = -0.5;
-	floor.rotation.x = Math.PI / 2;
-	scene.add(floor);
-	
-	////////////
-	// CUSTOM //
-	////////////
-	
-	var imagePrefix = "../assets/textures/01_SPoW_051119.jpg";
+				var imagePrefix = "../assets/textures/01_SPoW_051119.jpg";
+				var backgroundPic = new THREE.BoxGeometry( 5000, 5000, 5000 );
+				var materialArray = [];
+				
+				for (var i = 0; i < 6; i++)
+					materialArray.push( new THREE.MeshBasicMaterial({
+						map: THREE.ImageUtils.loadTexture( imagePrefix ),
+						side: THREE.BackSide
+					}));
 
-	var skyGeometry = new THREE.CubeGeometry( 5000, 5000, 5000 );	
-	
-	var materialArray = [];
-	for (var i = 0; i < 6; i++)
-		materialArray.push( new THREE.MeshBasicMaterial({
-			map: THREE.ImageUtils.loadTexture( imagePrefix ),
-			side: THREE.BackSide
-		}));
-	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
-	var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
-	scene.add( skyBox );
-    var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				var backgroundMaterial = new THREE.MeshFaceMaterial( materialArray );
+				var backgroundBox = new THREE.Mesh( backgroundPic, backgroundMaterial );
+				scene.add(backgroundBox);
 
-        // position the cube
-        cube.position.x = 0;
-        cube.position.y = 30;
-        cube.position.z = 0;
+			    var floatDomino = new THREE.Mesh(dominoGeometry, dominoMaterial);
+		        floatDomino.position.x = 0;
+		        floatDomino.position.y = 30;
+		        floatDomino.position.z = 0;
+		        floatDomino.material.needsUpdate = true;
 
-        // add the cube to the scene
+			function onDocumentMouseDown(event) {
 
+			    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+			    vector = vector.unproject(camera);
 
-      //  scene.add(cube);
+			    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+			    var intersectsDomino = raycaster.intersectObject(floor);
 
-/*     var listener = new THREE.AudioListener();
-      camera.add(listener);
-      var sound = new THREE.Audio( listener );
-      var audioLoader = new THREE.AudioLoader();
-		audioLoader.load( '../assets/audio/click.wav', function( buffer ) {
-		sound.setBuffer( buffer );
-		sound.setLoop( true );
-		sound.setVolume( 0.5 );
-		sound.play();
-	}); */
+			    if (event.button == 0 && touched == false && addDom == true) {
 
+				    var domino = new Physijs.BoxMesh(dominoGeometry, Physijs.createMaterial(new THREE.MeshPhongMaterial({color: selColor})));
+				    domino.__dirtyRotation = true;
+				    domino.position.y = 3.5;
+				 	domino.material.needsUpdate = true;
+				    domino.position.x = intersectsDomino[0].point.x;
+				    domino.position.y = intersectsDomino[0].point.y + 30;
+				    domino.position.z = intersectsDomino[0].point.z;
+				  	domino.rotation.y = floatDomino.rotation.y;
+				  	domino._physijs.mass = 50;
+				  	scene.add(domino);
+					dominos.push(domino);
+				}
 
+				for (var i=0; i<dominos.length; i++) {
 
+					var intersectsDominos = raycaster.intersectObject(dominos[i]);
 
-	function onDocumentMouseDown(event) {
-		var mouseButton;
-		
+					if(intersectsDominos.length > 0 && event.button == 2 && addDom == false) {
 
-	    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
-	    vector = vector.unproject(camera);
+						for (var a=0; a<dominos.length; a++) {
 
-	    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+							dominos[a].material.transparent = false;
+							dominos[a].material.opacity = 1;
 
-	    var intersects = raycaster.intersectObject(floor);
-	  
-	    if (intersects.length > 0) {
-	    	//if (event.button == 0)
+						}
 
+						dominos[i].material.transparent = true;
+						dominos[i].material.opacity = 0.6;
+						dominos[i].material.color.setHex(selColor);
+						crash = i;
+					}
+				}
+			};
 
-	    }
+			function onDocumentMouseMove(event) {
 
-	    if (event.button == 1 && colorD == false && addDom == true) {
+				var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
+				vector = vector.unproject(camera);
 
-	    var domina = new Physijs.BoxMesh(cubeGeometry, Physijs.createMaterial(new THREE.MeshPhongMaterial(
-                                {
-                                    color: 0xcd0000,
-                                   // transparent: true, opacity: 0.8,
-		                          //map: THREE.ImageUtils.loadTexture( '../assets/textures/general/darker_wood.jpg' )
-                                })));
-	    domina.__dirtyRotation = true;
-	    domina.position.y = 3.5;
-	 
-	    domina.position.x = intersects[0].point.x;
-	    domina.position.y = intersects[0].point.y + 30;
-	    domina.position.z = intersects[0].point.z;
-	  
-	    scene.add(domina); 
-		dominos.push(domina);
-	}
+				var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
-	var vector3 = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
-	vector3 = vector3.unproject(camera);
-	var raycaster3 = new THREE.Raycaster(camera.position, vector3.sub(camera.position).normalize());
-	for (var i=0; i<dominos.length; i++) {
-		var intersects3 = raycaster3.intersectObject(dominos[i]);
-		if(intersects3.length > 0 && event.button == 0) {
-			for (var a=0; a<dominos.length; a++) {
-				dominos[a].material.transparent = false;
-				dominos[a].material.opacity = 1;
-			}
-			dominos[i].material.transparent = true;
-			dominos[i].material.opacity = 0.5;
+				var intersectsFloatDomino = raycaster.intersectObject(floor);
+				
+				if(intersectsFloatDomino[1])
 
-		}
+					floatDomino.position.set( intersectsFloatDomino[1].point.x , intersectsFloatDomino[1].point.y + 30, intersectsFloatDomino[1].point.z );
 
-		if(intersects3.length > 0 && event.button == 2) {
-			dominos[i].rotation.x = 0.3;
-			dominos[i].rotation.z = 0.3;
-			dominos[i].__dirtyRotation = true;
-			soundSample = true;
-		}
-	}
+				floatDomino.material.color.setHex(selColor);
+				var originPoint = floatDomino.position.clone();
 
+				for (var vertexIndex = 0; vertexIndex < floatDomino.geometry.vertices.length; vertexIndex++) {
 
-	}
-	
+					var localVertex = floatDomino.geometry.vertices[vertexIndex].clone();
+					var globalVertex = localVertex.applyMatrix4( floatDomino.matrix );
+					var directionVector = globalVertex.sub(floatDomino.position);
+					var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+					var collisionResults = ray.intersectObjects(dominos);
+
+					if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+
+						floatDomino.material.wireframe = true;
+						touched = true;
+
+					}
+
+					else {
+
+						floatDomino.material.wireframe = false;
+						touched = false;
+
+					}
+				}
+			};
+			
+			function onDocumentKeyDown(event) {
+
+				var rotateAngle = Math.PI / 16;
+
+				if (keyboard.pressed("a")) { 
+
+					scene.add(floatDomino);
+					addDom = true;
+
+				}
+
+				if (keyboard.pressed("d")) { 
+
+					scene.remove(floatDomino);
+					addDom = false;
+
+				}
+
+				if(keyboard.pressed("x") && addDom == false) {
+					
+					scene.remove(dominos[crash]);
+
+				}
 
 
-	function onDocumentMouseMove(event) {
-		
-		var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
-		vector = vector.unproject(camera);
+				if(keyboard.pressed("left") && addDom == false) {
 
-		var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+					dominos[crash].rotation.x = 0.3;
+					dominos[crash].rotation.z = 0.3;
+					dominos[crash].__dirtyRotation = true;
 
-	//	var intersects = raycaster.intersectObject(skyBox);
-		var intersects2 = raycaster.intersectObject(floor);
-		
-/*		console.log(intersects2);
-		if(intersects2 == 'undefined')
-		{cube.visibility = false;
-			console.log('usao') }
-		if(intersects == 'undefined')*/
-		if(intersects2[1])
-		cube.position.set( intersects2[1].point.x , intersects2[1].point.y + 30, intersects2[1].point.z )
+				}
 
-	var originPoint = cube.position.clone();
-	for (var vertexIndex = 0; vertexIndex < cube.geometry.vertices.length; vertexIndex++)
-	{		
-		var localVertex = cube.geometry.vertices[vertexIndex].clone();
-		var globalVertex = localVertex.applyMatrix4( cube.matrix );
-		var directionVector = globalVertex.sub( cube.position );
-		
-		var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
-		var collisionResults = ray.intersectObjects( dominos );
-		if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-			cube.material.wireframe = true;
-			colorD = true;
-		}
-		else{
-			cube.material.wireframe = false;
-			colorD = false;
-		}
-	}	
+				if(keyboard.pressed("right") && addDom == false) {
 
-	
+					dominos[crash].rotation.x = -0.3;
+					dominos[crash].rotation.z = -0.3;
+					dominos[crash].__dirtyRotation = true;
 
-	}
-	
-	function onDocumentKeyDown(event){
+				}
 
-		if ( keyboard.pressed("a") ) 
-		{ 	
-			scene.add(cube);
-			addDom = true;
-		}
-		if ( keyboard.pressed("d") ) 
-		{ 	
-			scene.remove(cube);
-			addDom = false;
-		}
-	}
-}
+				if(keyboard.pressed("0")) {
 
-function animate() 
-{
-    requestAnimationFrame( animate );
-	render();		
-	update();
-}
+					location.reload();
 
-function update()
-{
-	if ( keyboard.pressed("z") ) 
-	{ 
-	}
-	
-	
-	
-	
-	controls.update();
-}
+				}
 
-function render() 
-{	scene.simulate(undefined, 1);
-	renderer.render( scene, camera );
-}
+				
+				if (keyboard.pressed("r") && addDom == true) {
 
-</script>
+					floatDomino.rotation.y += rotateAngle;
+					floatDomino.__dirtyRotation = true;
 
-</body>
+				}
+
+			
+				if (keyboard.pressed("r") && addDom == false) {
+
+					dominos[crash].rotation.y += rotateAngle;
+					dominos[crash].__dirtyRotation = true;
+
+				}
+
+			};
+
+		};
+
+			function animate() {
+
+			    requestAnimationFrame( animate );
+				render();		
+				update();
+
+			};
+
+			function update() {
+
+				controls.update();
+			
+			};
+
+			function render() {
+
+				scene.simulate(undefined, 1);
+				renderer.render( scene, camera );
+
+			};
+
+		</script>
+	</body>
 </html>

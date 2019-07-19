@@ -2,8 +2,8 @@
 
 .ui-widget-content 
 {
-    font-size:12px;
-    font-family: georgia;
+    font-size:16px;
+    font-family: Montserrat;
 }
 
 /* trim space around info button */
@@ -17,7 +17,7 @@
 {
 	outline-width: 0px !important;
 	background-color: transparent !important;
-    background-image: url('../images/icon-close-16.png') !important;
+    background-image: url('../assets/textures/icon-close-16.png') !important;
 	background-repeat:no-repeat !important;
 }
 
@@ -26,7 +26,7 @@
 .ui-dialog-titlebar-close:focus 
 {
     background-color: transparent !important;
-    background-image: url('../images/icon-close-16.png') !important;
+    background-image: url('../assets/textures/icon-close-16.png') !important;
 	background-repeat:no-repeat !important;
 }
 
