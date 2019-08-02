@@ -33,15 +33,15 @@ $(function()
     .append("<img width='32' id='blue' height='32' src='../assets/textures/icon-blue.png'/>")
 
 	    $("#red").click(function(){
-	    	selColor = 0xff0000;
+	    	selColor = 0xff6961;
 	    });
 
 	    $("#green").click(function(){
-	    	selColor = 0x00ff00;
+	    	selColor = 0x77dd77;
 	    });
 
 	    $("#blue").click(function(){
-	    	selColor = 0x0000ff;
+	    	selColor = 0xaec6cf;
 	    });
 
 });

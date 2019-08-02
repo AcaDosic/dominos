@@ -2,6 +2,7 @@
 <html lang="en">
 	<head>
 		<title>Domino Crash v1.0</title>
+		<a href="https://www.freepik.com/free-photos-vectors/background">Background photo created by tirachard - www.freepik.com</a>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link rel=stylesheet href="../libs/base.css"/>
@@ -30,12 +31,13 @@
 		<link rel=stylesheet href="../libs/jquery-ui.css"/>		
 		<link rel=stylesheet href="../libs/info.css"/>		
 
-		<script src="../libs/three.js"></script>
+		
+		<script src="../libs/three1.js"></script>		
 		<script src="../libs/Detector.js"></script>
 		<script src="../libs/OrbitControls.js"></script>
 		<script src="../libs/FirstPersonControls.js"></script>
 		<script type="text/javascript" src="../libs/dat.gui.js"></script>
-		<script type="text/javascript" src="../libs/physi.js"></script>
+		<script type="text/javascript" src="../physi.js"></script>
 		<script type="text/javascript" src="../libs/stats.js"></script>
 		<script src="../libs/THREEx.KeyboardState.js"></script>
 		<script src="../libs/THREEx.FullScreen.js"></script>
@@ -57,19 +59,42 @@
 			var touched = false;
 			var addDom = false;
 			var crash = 0;
-			var selColor = 0x00ff00;
+			var selColor = 0x77dd77;
+			var crashDomino = 0;
+			var counter = 0;
+			var selected = false;
+			var pickedObject;
 
 			init();
 			animate();
+
+			function handleCollision(a, b, c, d) {		
+	
+				
+				var listener = new THREE.AudioListener();
+				camera.add( listener );
+				var sound = new THREE.Audio( listener );
+				scene.add( sound );
+				var audioLoader = new THREE.AudioLoader();
+				audioLoader.load( '../assets/audio/snap.mp3', function( buffer ) {
+					sound.setBuffer( buffer );
+					sound.setLoop( false );
+					sound.setVolume( 0.5 );
+					sound.play();
+				});
+
+			};
 
 			function init() {
 
 				document.addEventListener('mousedown', onDocumentMouseDown, false);
 				document.addEventListener('mousemove', onDocumentMouseMove, false);
-				document.addEventListener("keydown", onDocumentKeyDown, false);
+				document.addEventListener("keydown", onDocumentKeyDown, false);				
 
 				scene = new Physijs.Scene;
 				scene.setGravity(new THREE.Vector3(0, -2000, 0));
+				scene.addEventListener( 'update', function() {
+				});
 
 				var screen_w = window.innerWidth;
 				var screen_h = window.innerHeight;
@@ -96,16 +121,23 @@
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-				var dominoMaterial = new THREE.MeshLambertMaterial({color: selColor});
+				var dominoMaterial = Physijs.createMaterial (
+					new THREE.MeshLambertMaterial(new THREE.MeshLambertMaterial({
+						map: THREE.ImageUtils.loadTexture('../assets/textures/darker_wood.jpg'),
+						side: THREE.DoubleSide,
+						color: selColor}),
+					.5,
+					.5
+					 ));
+
 				var dominoMaterialTouch = new THREE.MeshLambertMaterial({color: selColor, wireframe: true});
 				var dominoGeometry = new THREE.BoxGeometry(5, 60, 25, 8, 8, 8, dominoMaterial);
 				var projector = new THREE.Projector();
 
-				var light = new THREE.PointLight(0xffffff);
-				light.position.set(0,250,0);
+				var light = new THREE.HemisphereLight(0xffffbb, 0xadd8e6, 1);					
 				scene.add(light);
-
-				var floorTexture = new THREE.ImageUtils.loadTexture( '../assets/textures/annie-spratt-osuiatBDTww-unsplash.jpg' );
+				
+				var floorTexture = new THREE.ImageUtils.loadTexture( '../assets/textures/f4.jpg' );
 				floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 				floorTexture.repeat.set( 1, 1 );
 				var floorMaterial = Physijs.createMaterial(new THREE.MeshPhongMaterial({map: floorTexture, side: THREE.DoubleSide}), .9, .3);
@@ -115,14 +147,16 @@
 				floor.rotation.x = Math.PI / 2;
 				scene.add(floor);
 
-				var imagePrefix = "../assets/textures/01_SPoW_051119.jpg";
+				var imagePrefix = "../assets/textures/f2.jpg";
+			//	var directions  = ["1", "2", "3", "4", "5", "6"];
+			//	var imageSuffix = ".jpg";
 				var backgroundPic = new THREE.BoxGeometry( 5000, 5000, 5000 );
 				var materialArray = [];
 				
 				for (var i = 0; i < 6; i++)
 					materialArray.push( new THREE.MeshBasicMaterial({
-						map: THREE.ImageUtils.loadTexture( imagePrefix ),
-						side: THREE.BackSide
+						map: THREE.ImageUtils.loadTexture(imagePrefix),
+						side: THREE.DoubleSide
 					}));
 
 				var backgroundMaterial = new THREE.MeshFaceMaterial( materialArray );
@@ -133,51 +167,76 @@
 		        floatDomino.position.x = 0;
 		        floatDomino.position.y = 30;
 		        floatDomino.position.z = 0;
-		        floatDomino.material.needsUpdate = true;
+		        floatDomino.material.needsUpdate = true;		        
 
+		        
 			function onDocumentMouseDown(event) {
+
 
 			    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
 			    vector = vector.unproject(camera);
+	
 
 			    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 			    var intersectsDomino = raycaster.intersectObject(floor);
 
 			    if (event.button == 0 && touched == false && addDom == true) {
 
-				    var domino = new Physijs.BoxMesh(dominoGeometry, Physijs.createMaterial(new THREE.MeshPhongMaterial({color: selColor})));
+				    var domino = new Physijs.BoxMesh(dominoGeometry, Physijs.createMaterial(
+				    	new THREE.MeshLambertMaterial({
+					//	map: THREE.ImageUtils.loadTexture('../assets/textures/darker_wood.jpg'),
+						side: THREE.DoubleSide,
+						color: selColor}),
+						.5,
+						.5
+					 ));
+
+
 				    domino.__dirtyRotation = true;
 				    domino.position.y = 3.5;
 				 	domino.material.needsUpdate = true;
 				    domino.position.x = intersectsDomino[0].point.x;
-				    domino.position.y = intersectsDomino[0].point.y + 30;
+				    domino.position.y = intersectsDomino[0].point.y + 35;
 				    domino.position.z = intersectsDomino[0].point.z;
 				  	domino.rotation.y = floatDomino.rotation.y;
 				  	domino._physijs.mass = 50;
-				  	scene.add(domino);
+				  	domino.value = 'domino';
+				  	domino.addEventListener( 'collision', handleCollision );
+
+				   	scene.add(domino);
 					dominos.push(domino);
 				}
 
-				for (var i=0; i<dominos.length; i++) {
+				if(event.button == 2 && addDom == false) {
 
-					var intersectsDominos = raycaster.intersectObject(dominos[i]);
+					for (var a=0; a<dominos.length; a++) {
 
-					if(intersectsDominos.length > 0 && event.button == 2 && addDom == false) {
+						dominos[a].material.transparent = false;
+						dominos[a].material.opacity = 1;
 
-						for (var a=0; a<dominos.length; a++) {
+					}
 
-							dominos[a].material.transparent = false;
-							dominos[a].material.opacity = 1;
+					const intersectedObjects = raycaster.intersectObjects(scene.children);
+
+					if (intersectedObjects.length) {
+
+						pickedObject = intersectedObjects[0].object;
+
+						if(pickedObject.value == 'domino') {
+
+							selected = true;
+							pickedObject.material.color.setHex(selColor);
+							pickedObject.material.transparent = true;
+							pickedObject.material.opacity = 0.6;
 
 						}
-
-						dominos[i].material.transparent = true;
-						dominos[i].material.opacity = 0.6;
-						dominos[i].material.color.setHex(selColor);
-						crash = i;
+						
 					}
+
 				}
+
 			};
+
 
 			function onDocumentMouseMove(event) {
 
@@ -221,6 +280,7 @@
 			
 			function onDocumentKeyDown(event) {
 
+
 				var rotateAngle = Math.PI / 16;
 
 				if (keyboard.pressed("a")) { 
@@ -237,26 +297,51 @@
 
 				}
 
-				if(keyboard.pressed("x") && addDom == false) {
-					
-					scene.remove(dominos[crash]);
+				if(keyboard.pressed("x") && addDom == false && pickedObject !== undefined) {
+						
+						scene.remove(pickedObject);
+						dominos = dominos.filter(item => item !== pickedObject);
+						pickedObject = undefined;
 
 				}
 
-
 				if(keyboard.pressed("left") && addDom == false) {
 
-					dominos[crash].rotation.x = 0.3;
-					dominos[crash].rotation.z = 0.3;
-					dominos[crash].__dirtyRotation = true;
+					if(pickedObject !== undefined) {
+
+						pickedObject.rotation.x = 0.3;
+						pickedObject.rotation.z = 0.3;
+						pickedObject.__dirtyRotation = true;
+
+					} else if(dominos[0] !== undefined) {
+
+						dominos[0].rotation.x = 0.3;
+						dominos[0].rotation.z = 0.3;
+						dominos[0].__dirtyRotation = true;
+
+					} else 
+
+						return; 
 
 				}
 
 				if(keyboard.pressed("right") && addDom == false) {
 
-					dominos[crash].rotation.x = -0.3;
-					dominos[crash].rotation.z = -0.3;
-					dominos[crash].__dirtyRotation = true;
+					if(pickedObject !== undefined) {
+
+						pickedObject.rotation.x = -0.3;
+						pickedObject.rotation.z = -0.3;
+						pickedObject.__dirtyRotation = true;
+
+					} else if(dominos[0] !== undefined) {
+
+						dominos[0].rotation.x = -0.3;
+						dominos[0].rotation.z = -0.3;
+						dominos[0].__dirtyRotation = true;
+
+					} else 
+					
+						return; 
 
 				}
 
@@ -275,16 +360,17 @@
 				}
 
 			
-				if (keyboard.pressed("r") && addDom == false) {
+				if (keyboard.pressed("r") && addDom == false && pickedObject !== undefined) {
 
-					dominos[crash].rotation.y += rotateAngle;
-					dominos[crash].__dirtyRotation = true;
+					pickedObject.rotation.y -= rotateAngle;
+					pickedObject.__dirtyRotation = true;
 
 				}
 
 			};
 
 		};
+
 
 			function animate() {
 
@@ -297,13 +383,13 @@
 			function update() {
 
 				controls.update();
-			
+
 			};
 
 			function render() {
 
 				scene.simulate(undefined, 1);
-				renderer.render( scene, camera );
+				renderer.render( scene, camera );				
 
 			};
 
