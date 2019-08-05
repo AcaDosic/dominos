@@ -243,10 +243,10 @@
 
 							selected = true;
 						//	pickedObject.material.color.setHex(selColor);
-							pickedObject.material.needsUpdate = true;
-							pickedObject.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
+							//pickedObject.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
 							pickedObject.material.transparent = true;
 							pickedObject.material.opacity = 0.6;
+							pickedObject.material.needsUpdate = true;
 
 						}
 						
@@ -318,7 +318,7 @@
 
 				}
 
-				if (keyboard.pressed("x") && addDom == false && pickedObject !== undefined) {
+				if ((keyboard.pressed("x") || event.code == "Delete" ) && addDom == false && pickedObject !== undefined) {
 						
 						scene.remove(pickedObject);
 						dominos = dominos.filter(item => item !== pickedObject);

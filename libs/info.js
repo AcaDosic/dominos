@@ -34,7 +34,7 @@ $(function()
 
 	    $("#red").click(function(){
 
-	    	selMaterial = 'rock_wall_01';
+	    	selMaterial = 'floor06';
 	    	floatDomino.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
 	    	floatDomino.material.map.wrapS = floatDomino.material.map.wrapT = THREE.RepeatWrapping; 
 				floatDomino.material.map.repeat.set( 1, 8 );
