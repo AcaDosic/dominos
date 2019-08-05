@@ -1,0 +1,8 @@
++ ESC - stop adding dominos
++ automatic add mode
++ init function ends where?
+- move code to index file at root of project
++ change some textures
++ IF SHIFT DONT DROP
++ fix texture flickering
++ fix selecting floor and rotation of it

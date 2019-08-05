@@ -34,19 +34,31 @@ $(function()
 
 	    $("#red").click(function(){
 
-	    	selMaterial = 'domino6';
+	    	selMaterial = 'rock_wall_01';
+	    	floatDomino.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
+	    	floatDomino.material.map.wrapS = floatDomino.material.map.wrapT = THREE.RepeatWrapping; 
+				floatDomino.material.map.repeat.set( 1, 8 );
+				floatDomino.material.needsUpdate = true;
 
 	    });
 
 	    $("#green").click(function(){
 	    	
-	    	selMaterial = 'domino4';
+	    	selMaterial = 'floor_06';
+	    	floatDomino.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
+	    	floatDomino.material.map.wrapS = floatDomino.material.map.wrapT = THREE.RepeatWrapping; 
+				floatDomino.material.map.repeat.set( 1, 8 );
+				floatDomino.material.needsUpdate = true;
 
 	    });
 
 	    $("#blue").click(function(){
 	    	
-	    	selMaterial = 'domino2';
+	    	selMaterial = 'floor15';
+	    	floatDomino.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
+	    	floatDomino.material.map.wrapS = floatDomino.material.map.wrapT = THREE.RepeatWrapping; 
+				floatDomino.material.map.repeat.set( 1, 8 );
+				floatDomino.material.needsUpdate = true;
 
 	    });
 
