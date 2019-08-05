@@ -64,6 +64,7 @@
 			var counter = 0;
 			var selected = false;
 			var pickedObject;
+			var selMaterial = 'domino2';
 
 			init();
 			animate();
@@ -123,9 +124,10 @@
 
 				var dominoMaterial = Physijs.createMaterial (
 					new THREE.MeshLambertMaterial(new THREE.MeshLambertMaterial({
-						map: THREE.ImageUtils.loadTexture('../assets/textures/darker_wood.jpg'),
+						map: new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png'),
 						side: THREE.DoubleSide,
-						color: selColor}),
+						//color: selColor
+					}),
 					.5,
 					.5
 					 ));
@@ -137,7 +139,7 @@
 				var light = new THREE.HemisphereLight(0xffffbb, 0xadd8e6, 1);					
 				scene.add(light);
 				
-				var floorTexture = new THREE.ImageUtils.loadTexture( '../assets/textures/f4.jpg' );
+				var floorTexture = new THREE.TextureLoader().load( '../assets/textures/f4.jpg' );
 				floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 				floorTexture.repeat.set( 1, 1 );
 				var floorMaterial = Physijs.createMaterial(new THREE.MeshPhongMaterial({map: floorTexture, side: THREE.DoubleSide}), .9, .3);
@@ -155,12 +157,12 @@
 				
 				for (var i = 0; i < 6; i++)
 					materialArray.push( new THREE.MeshBasicMaterial({
-						map: THREE.ImageUtils.loadTexture(imagePrefix),
+						map: new THREE.TextureLoader().load(imagePrefix),
 						side: THREE.DoubleSide
 					}));
 
-				var backgroundMaterial = new THREE.MeshFaceMaterial( materialArray );
-				var backgroundBox = new THREE.Mesh( backgroundPic, backgroundMaterial );
+				//var backgroundMaterial = new THREE.Mesh( materialArray );
+				var backgroundBox = new THREE.Mesh(backgroundPic, materialArray);
 				scene.add(backgroundBox);
 
 			    var floatDomino = new THREE.Mesh(dominoGeometry, dominoMaterial);
@@ -175,7 +177,7 @@
 
 			    var vector = new THREE.Vector3(( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1, 0.5);
 			    vector = vector.unproject(camera);
-	
+
 
 			    var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 			    var intersectsDomino = raycaster.intersectObject(floor);
@@ -184,13 +186,13 @@
 
 				    var domino = new Physijs.BoxMesh(dominoGeometry, Physijs.createMaterial(
 				    	new THREE.MeshLambertMaterial({
-					//	map: THREE.ImageUtils.loadTexture('../assets/textures/darker_wood.jpg'),
+						map: new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png'),
 						side: THREE.DoubleSide,
-						color: selColor}),
+						//color: selColor
+					}),
 						.5,
 						.5
 					 ));
-
 
 				    domino.__dirtyRotation = true;
 				    domino.position.y = 3.5;
@@ -225,7 +227,9 @@
 						if(pickedObject.value == 'domino') {
 
 							selected = true;
-							pickedObject.material.color.setHex(selColor);
+						//	pickedObject.material.color.setHex(selColor);
+							pickedObject.material.needsUpdate = true;
+							pickedObject.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
 							pickedObject.material.transparent = true;
 							pickedObject.material.opacity = 0.6;
 
@@ -251,7 +255,9 @@
 
 					floatDomino.position.set( intersectsFloatDomino[1].point.x , intersectsFloatDomino[1].point.y + 30, intersectsFloatDomino[1].point.z );
 
-				floatDomino.material.color.setHex(selColor);
+			//	floatDomino.material.color.setHex(selColor);
+				floatDomino.material.map = new THREE.TextureLoader().load('../assets/textures/' + selMaterial + '.png');
+				floatDomino.material.needsUpdate = true;
 				var originPoint = floatDomino.position.clone();
 
 				for (var vertexIndex = 0; vertexIndex < floatDomino.geometry.vertices.length; vertexIndex++) {
