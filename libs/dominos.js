@@ -1,4 +1,6 @@
-'use strict';
+/*global
+    use, THREE, THREEx, $, Physijs, window, Detector, requestAnimationFrame
+*/
 Physijs.scripts.worker = 'libs/physijs_worker.js';
 Physijs.scripts.ammo = 'ammo.js';
 var renderer, scene, container, controls, camera;
@@ -6,18 +8,15 @@ var keyboard = new THREEx.KeyboardState();
 var dominos = [];
 var touched = false;
 var addDom = true;
-var crash = 0;
-var item;
-var selColor = 0x77dd77;
-var crashDomino = 0;
-var selected = false;
+var item = 0;
 var pickedObject;
 var selMaterial = 'floor15';
 var floatDomino = 0;
 var dominoGeometry = 0;
 var floor = 0;
 
-function handleCollision(a, b, c, d) {
+function handleCollision(ignore, b) {
+    'use strict';
     var force = b;
     var listener = new THREE.AudioListener();
     camera.add(listener);
@@ -41,6 +40,7 @@ function handleCollision(a, b, c, d) {
 }
 
 function onDocumentMouseDown(event) {
+    'use strict';
     var a;
     var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
     vector = vector.unproject(camera);
@@ -82,7 +82,6 @@ function onDocumentMouseDown(event) {
         if (intersectedObjects.length) {
             if (intersectedObjects[0].object.value === 'domino') {
                 pickedObject = intersectedObjects[0].object;
-                selected = true;
                 //  pickedObject.material.color.setHex(selColor);
                 pickedObject.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
                 pickedObject.material.transparent = true;
@@ -94,6 +93,7 @@ function onDocumentMouseDown(event) {
 }
 
 function onDocumentMouseMove(event) {
+    'use strict';
     var vertexIndex, localVertex, globalVertex, directionVector, ray, collisionResults;
     var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
     vector = vector.unproject(camera);
@@ -123,6 +123,7 @@ function onDocumentMouseMove(event) {
 }
 
 function onDocumentKeyDown(event) {
+    'use strict';
     var rotateAngle = Math.PI / 16;
     if (keyboard.pressed("a")) {
         scene.add(floatDomino);
@@ -166,6 +167,7 @@ function onDocumentKeyDown(event) {
 }
 
 function init() {
+    'use strict';
     var i;
     document.addEventListener('mousedown', onDocumentMouseDown, false);
     document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -245,90 +247,95 @@ function init() {
     floatDomino.material.needsUpdate = true;
     scene.add(floatDomino);
 }
-
-$("#infoBox").css({
-    background: "rgba(255,255,255,0.5)"
-}).dialog({
-    autoOpen: false,
-    show: {
-        effect: 'fade',
-        duration: 500
-    },
-    hide: {
-        effect: 'fade',
-        duration: 500
-    }
-});
-
-$("#infoButton")
-    .text("") // sets text to empty
-    .css({
-        "z-index": "2",
-        background: "rgba(0,0,0,0)",
-        opacity: "0.9",
-        position: "absolute",
-        top: "8px",
-        left: "14px"
-    }) // adds CSS
-    .append("<img width='32' height='32' src='assets/textures/icinf.png'/>")
-    .button()
-    .click(
-        function () {
-            $("#infoBox").dialog("open");
+$(function () {
+    'use strict';
+    $("#infoBox").css({
+        background: "rgba(255,255,255,0.5)"
+    }).dialog({
+        autoOpen: false,
+        show: {
+            effect: 'fade',
+            duration: 500
+        },
+        hide: {
+            effect: 'fade',
+            duration: 500
         }
-    );
+    });
 
-$("#color")
-    .css({
-        "z-index": "2",
-        backgroung: "rgba(0,0,0,0)",
-        opacity: "0.9",
-        position: "absolute",
-        top: "8px",
-        right: "14px"
-    })
-    .append("<img width='32' id='red' height='32' src='assets/textures/icon-red.png'/>")
-    .append("<img width='32' id='green' height='32' src='assets/textures/icon-green.png'/>")
-    .append("<img width='32' id='blue' height='32' src='assets/textures/icon-blue.png'/>");
+    $("#infoButton")
+        .text("") // sets text to empty
+        .css({
+            "z-index": "2",
+            background: "rgba(0,0,0,0)",
+            opacity: "0.9",
+            position: "absolute",
+            top: "8px",
+            left: "14px"
+        }) // adds CSS
+        .append("<img width='32' height='32' src='assets/textures/icinf.png'/>")
+        .button()
+        .click(
+            function () {
+                $("#infoBox").dialog("open");
+            }
+        );
 
-$("#red").click(function () {
-    selMaterial = 'floor06';
-    floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
-    floatDomino.material.map.wrapS = THREE.RepeatWrapping;
-    floatDomino.material.map.wrapT = THREE.RepeatWrapping;
-    floatDomino.material.map.repeat.set(1, 8);
-    floatDomino.material.needsUpdate = true;
-});
+    $("#color")
+        .css({
+            "z-index": "2",
+            backgroung: "rgba(0,0,0,0)",
+            opacity: "0.9",
+            position: "absolute",
+            top: "8px",
+            right: "14px"
+        })
+        .append("<img width='32' id='red' height='32' src='assets/textures/icon-red.png'/>")
+        .append("<img width='32' id='green' height='32' src='assets/textures/icon-green.png'/>")
+        .append("<img width='32' id='blue' height='32' src='assets/textures/icon-blue.png'/>");
 
-$("#green").click(function () {
-    selMaterial = 'floor_06';
-    floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
-    floatDomino.material.map.wrapS = THREE.RepeatWrapping;
-    floatDomino.material.map.wrapT = THREE.RepeatWrapping;
-    floatDomino.material.map.repeat.set(1, 8);
-    floatDomino.material.needsUpdate = true;
-});
+    $("#red").click(function () {
+        selMaterial = 'floor06';
+        floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
+        floatDomino.material.map.wrapS = THREE.RepeatWrapping;
+        floatDomino.material.map.wrapT = THREE.RepeatWrapping;
+        floatDomino.material.map.repeat.set(1, 8);
+        floatDomino.material.needsUpdate = true;
+    });
 
-$("#blue").click(function () {
-    selMaterial = 'floor15';
-    floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
-    floatDomino.material.map.wrapS = THREE.RepeatWrapping;
-    floatDomino.material.map.wrapT = THREE.RepeatWrapping;
-    floatDomino.material.map.repeat.set(1, 8);
-    floatDomino.material.needsUpdate = true;
+    $("#green").click(function () {
+        selMaterial = 'floor_06';
+        floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
+        floatDomino.material.map.wrapS = THREE.RepeatWrapping;
+        floatDomino.material.map.wrapT = THREE.RepeatWrapping;
+        floatDomino.material.map.repeat.set(1, 8);
+        floatDomino.material.needsUpdate = true;
+    });
+
+    $("#blue").click(function () {
+        selMaterial = 'floor15';
+        floatDomino.material.map = new THREE.TextureLoader().load('assets/textures/' + selMaterial + '.png');
+        floatDomino.material.map.wrapS = THREE.RepeatWrapping;
+        floatDomino.material.map.wrapT = THREE.RepeatWrapping;
+        floatDomino.material.map.repeat.set(1, 8);
+        floatDomino.material.needsUpdate = true;
+    });
 });
 
 
 function update() {
+    'use strict';
     controls.update();
 }
 
 function render() {
+    'use strict';
     scene.simulate(undefined, 1);
     renderer.render(scene, camera);
 }
 
 function animate() {
+    'use strict';
     requestAnimationFrame(animate);
     render();
     update();
